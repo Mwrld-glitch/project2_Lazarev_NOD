@@ -91,7 +91,8 @@ def select(table_name, where_clause=None):
     if where_clause:
         table_data = [
             record for record in table_data
-            if all(str(record.get(col)) == str(val) for col, val in where_clause.items())
+            if all(str(record.get(col)) == str(val)
+                   for col, val in where_clause.items())
         ]
     
     if table_data:
@@ -111,13 +112,13 @@ def update(table_name, set_clause, where_clause):
         for col, val in where_clause.items():
             record_val = str(record.get(col, "")).strip()
             condition_val = str(val).strip()
-            print(f"DEBUG: comparing {record_val} vs {condition_val}") 
             if record_val != condition_val:
                 match = False
                 break
         if match:
-                record[col] = new_val
-                updated = True
+            for set_col, new_val in set_clause.items():
+                record[set_col] = new_val
+            updated = True
     
     if updated:
         save_table_data(table_name, table_data)

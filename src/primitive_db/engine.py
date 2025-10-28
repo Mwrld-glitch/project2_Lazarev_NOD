@@ -20,6 +20,7 @@ def print_help():
     print("\n***Операции с данными***")
     print("Функции:")
     print("<command> insert into <таблица> values (<значения>) - создать запись")
+    print("<command> select from <имя_таблицы> - прочитать все записи")
     print("<command> select from <таблица> [where условие] - прочитать записи")
     print("<command> update <таблица> set <столбец>=<значение> where <условие> -" 
           "обновить запись")
@@ -81,7 +82,7 @@ def run():
                 values_str = " ".join(args[4:])
                 if values_str.startswith("(") and values_str.endswith(")"):
                     values_str = values_str[1:-1]
-                values = [v.strip('"\'') for v in shlex.split(values_str)]
+                values = [v.strip('",\'') for v in shlex.split(values_str)]
                 meta = load_metadata(DB_META_FILE)
                 meta = insert(meta, table_name, values)
                 save_metadata(DB_META_FILE, meta)

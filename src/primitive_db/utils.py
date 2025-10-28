@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def load_metadata(filepath):
     try:
         with open(filepath, 'r') as f:
