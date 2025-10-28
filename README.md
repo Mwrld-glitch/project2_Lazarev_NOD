@@ -9,7 +9,14 @@
 - help - справка
 - exit - выход
 
+
 ## Пример
 Введите команду: create_table users name:str age:int
 Таблица "users" успешно создана
 
+## CRUD-операции
+- insert into таблица values (значения) - добавить запись
+- select from таблица - показать все записи
+- select from таблица where условие - найти записи
+- update таблица set столбец=значение where условие - обновить
+- delete from таблица where условие - удалить
