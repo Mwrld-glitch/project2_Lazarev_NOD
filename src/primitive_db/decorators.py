@@ -20,7 +20,9 @@ def confirm_action(action_name):
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
-                user_input = input(f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ')
+                user_input = input(
+                    f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: '
+                    )
                 if user_input.lower() == 'y':
                     return func(*args, **kwargs)
                 print("Отменено.")
