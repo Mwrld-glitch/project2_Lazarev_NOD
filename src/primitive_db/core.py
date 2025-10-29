@@ -1,9 +1,11 @@
 from prettytable import PrettyTable
 
+from .decorators import confirm_action, handle_db_errors, log_time
 from .utils import load_metadata, load_table_data, save_table_data
 
 DB_META_FILE = "db_meta.json"
 
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     if table_name in metadata:
         print(f'Ошибка: Таблица "{table_name}" уже существует.')
@@ -15,42 +17,43 @@ def create_table(metadata, table_name, columns):
     for col in all_columns:
         col_name, col_type = col.split(":")
         if col_type not in valid_types:
-            print(f'Ошибка: Некорректный тип "{col_type}" в столбце "{col_name}".')
-            return metadata
+            raise ValueError
     
     metadata[table_name] = all_columns
     print(f'Таблица "{table_name}" успешно создана '
           f'со столбцами: {", ".join(all_columns)}')
     return metadata
 
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
     if table_name not in metadata:
-        print(f'Ошибка: Таблица "{table_name}" не существует.')
-        return metadata
+        raise KeyError(table_name)
     
     del metadata[table_name]
     print(f'Таблица "{table_name}" успешно удалена.')
     return metadata
 
+@handle_db_errors
 def list_tables():
     meta = load_metadata(DB_META_FILE)
     if not meta:
-        print("Нет таблиц")
+        raise KeyError("таблиц")
     else:
         for table_name in meta:
             print(f"- {table_name}")
-#3
+
+@handle_db_errors
+@log_time
 def insert(metadata, table_name, values):
     if table_name not in metadata:
-        print(f'Ошибка: Таблица "{table_name}" не существует.')
-        return metadata
+        raise KeyError(table_name)
     
     table_data = load_table_data(table_name)
     
     columns = metadata[table_name][1:]
     if len(values) != len(columns):
-        print(f'Ожидается {len(columns)} значений, получено {len(values)}')
-        return metadata
+        raise ValueError 
     
     new_id = len(table_data) + 1
     record = {"ID": new_id}
@@ -59,19 +62,14 @@ def insert(metadata, table_name, values):
         col_name, col_type = col.split(":")
         value = values[i]
         if col_type == "int":
-            try:
-                value = int(value)
-            except ValueError:
-                print(f'Ошибка: Значение "{value}" не может быть преобразовано в int')
-                return metadata
+            value = int(value)
         elif col_type == "bool":
             if value.lower() == "true":
                 value = True
             elif value.lower() == "false":
                 value = False
             else:
-                print(f'Ошибка: Значение "{value}" не может быть преобразовано в bool')
-                return metadata
+                raise ValueError
         
         record[col_name] = value
     
@@ -81,12 +79,14 @@ def insert(metadata, table_name, values):
     print(f'Запись с ID={new_id} успешно добавлена в таблицу "{table_name}".')
     return metadata
 
+
+@handle_db_errors
+@log_time
 def select(table_name, where_clause=None):
     table_data = load_table_data(table_name)
     
     if not table_data:
-        print("Таблица пуста")
-        return
+        raise FileNotFoundError
     
     if where_clause:
         table_data = [
@@ -102,8 +102,9 @@ def select(table_name, where_clause=None):
             pt.add_row(list(record.values()))
         print(pt)
     else:
-        print("Нет данных, соответствующих условию")
+        raise ValueError
 
+@handle_db_errors
 def update(table_name, set_clause, where_clause):
     table_data = load_table_data(table_name)
     updated = False
@@ -124,9 +125,10 @@ def update(table_name, set_clause, where_clause):
         save_table_data(table_name, table_data)
         print("Запись успешно обновлена")
     else:
-        print("Записи для обновления не найдены")
+        raise ValueError
 
-
+@handle_db_errors
+@confirm_action("удаление записей")
 def delete(table_name, where_clause):
     table_data = load_table_data(table_name)
     
@@ -149,14 +151,13 @@ def delete(table_name, where_clause):
         save_table_data(table_name, new_data)
         print(f"Удалено записей: {deleted_count}")
     else:
-        print("Записи для удаления не найдены")
+        raise ValueError
         
-
+@handle_db_errors
 def info(table_name):
     meta = load_metadata(DB_META_FILE)
-    if table_name not in meta:
-        print(f"Таблица {table_name} не существует")
-        return
+    if not meta or table_name not in meta:  
+        raise KeyError(table_name)
     
     table_data = load_table_data(table_name)
     columns = meta[table_name]
